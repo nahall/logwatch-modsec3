@@ -1,17 +1,6 @@
 #!/usr/bin/perl -w
 ##########################################################################
-# $Id: mod_security2, v 1.0.3 2014/05/02
-##########################################################################
-#
-# Revision 1.0.3   2014/05/02
-# only collect first message from audit log #12
-#
-# Revision 1.0.2   2013/11/11
-# fixed error when message and ruleid not set #8
-#
-# Revision 1.0.1   2013/01/11
-# fixed problem with uninitialized values #6
-#
+# $Id: mod_security3, v 1.0.0 2024/08/01
 ##########################################################################
 # This script is written an maintained by:
 #   Torben Hansen <derhansen@gmail.com>
@@ -44,6 +33,13 @@
 #
 ##########################################################################
 
+##########################################################################
+#
+# This script is adapted from the original mod_security2 script by:
+#   Nick Hall
+#
+##########################################################################
+
 use Logwatch ':dates';
 
 # Disable warnings about unused variables
@@ -52,7 +48,6 @@ no warnings qw(once);
 my $Detail = $ENV{'LOGWATCH_DETAIL_LEVEL'} || 0;
 my $Debug = $ENV{'LOGWATCH_DEBUG'} || 0;
 my $SearchDate = TimeFilter('%d/%b/%Y:%H:%M:%S');
-my $within_range = 0;
 
 my %tmpEntry = ();
 my $count = 0;
@@ -77,8 +72,8 @@ $tmpEntry{$count}{"ruleid"} = "";
 while (defined($ThisLine = <STDIN>)) {
     chomp($ThisLine);
 
-    # Reset $check if line starts with two dashes
-    if ( $ThisLine =~ /-[A-Z]--/ ) {
+    # Reset $check if line starts with three dashes
+    if ( $ThisLine =~ /^---/ ) {
         $check = 0;
         $option = "";
     }
@@ -102,7 +97,7 @@ while (defined($ThisLine = <STDIN>)) {
         }
 
         if ($option eq "request-header") {
-            if ( ($method, $requestUri) = ($ThisLine =~ /^(POST|GET) (.*?)$/) ) {
+            if ( ($method, $requestUri) = ($ThisLine =~ /^(POST|GET) (.*?) HTTP/) ) {
                 $tmpEntry{$count}{"method"} = $method;
                 $tmpEntry{$count}{"uri"} = $requestUri;
 
@@ -111,7 +106,7 @@ while (defined($ThisLine = <STDIN>)) {
                     print STDERR "URI: " . $requestUri . "\n";
                 }
             }
-            elsif ( ($hostname) = ($ThisLine =~ /^Host: (.*?)$/) ) {
+            elsif ( ($hostname) = ($ThisLine =~ /^host: (.*?)$/i) ) {
                 $tmpEntry{$count}{"hostname"} = $hostname;
 
                 if ( $Debug >= 5 ) {
@@ -120,14 +115,14 @@ while (defined($ThisLine = <STDIN>)) {
             }
         }
         if ($option eq "audit-log-trailer") {
-            if ( $ThisLine =~ /^Message:/ ) {
+            if ( $ThisLine =~ /^ModSecurity: Warning\./ ) {
                 if ($tmpEntry{$count}{"ruleid"} eq "" && $tmpEntry{$count}{"message"} eq "") {
-                    if ( ($ruleId) = ($ThisLine =~ /\[id \"(.*?)\"\]/) ) {
+                    if ( ($ruleId) = ($ThisLine =~ /\[id "(\d+)"\]/) ) {
                         if ( $Debug >= 5 ) {
                             print STDERR "Rule ID: " . $ruleId. "\n";
                         }
                     }
-                    if ( ($msg) = ($ThisLine =~ /\[msg \"(.*?)\"\]/) ) {
+                    if ( ($msg) = ($ThisLine =~ /\[msg "(.*?)"\]/) ) {
                         if ( $Debug >= 5 ) {
                             print STDERR "Message: " . $msg. "\n";
                         }
@@ -138,35 +133,28 @@ while (defined($ThisLine = <STDIN>)) {
                     }
                 }
             }
-
-            if ( ($action) = ($ThisLine =~ /^Action: (.*?)$/) ) {
-                $tmpEntry{$count}{"action"} = $action;
+            elsif ( $ThisLine =~ /^ModSecurity: Access denied/ ) {
+                $tmpEntry{$count}{"action"} = "denied";
                 if ( $Debug >= 5 ) {
-                    print STDERR "Action: " . $action. "\n";
-                }
-            }
-            if ( ($engineMode) = ($ThisLine =~ /^Engine-Mode: (.*?)$/) ) {
-                $tmpEntry{$count}{"engine"} = $engineMode;
-                if ( $Debug >= 5 ) {
-                    print STDERR "Engine mode: " . $engineMode. "\n";
+                    print STDERR "Action: denied\n";
                 }
             }
         }
     }
 
-    if ( $ThisLine =~ /-A--/ ) {
+    if ( $ThisLine =~ /---.*---A--/ ) {
         $check = 1;
         $option = "audit-log-header";
     }
-    elsif ( $ThisLine =~ /-B--/ ) {
+    elsif ( $ThisLine =~ /---.*---B--/ ) {
         $check = 1;
         $option = "request-header";
     }
-    elsif ( $ThisLine =~ /-H--/ ) {
+    elsif ( $ThisLine =~ /---.*---H--/ ) {
         $check = 1;
         $option = "audit-log-trailer";
     }
-    elsif ( $ThisLine =~ /-Z--/ ) {
+    elsif ( $ThisLine =~ /---.*---Z--/ ) {
         $check = 0;
         $option = "";
 
@@ -189,7 +177,7 @@ while (defined($ThisLine = <STDIN>)) {
         $count++;
 
         # Reset values
-        $tmpEntry = ();
+        %tmpEntry = ();
         $tmpEntry{$count}{"action"} = "";
         $tmpEntry{$count}{"hostname"} = "";
         $tmpEntry{$count}{"message"} = "";
@@ -214,7 +202,6 @@ if (keys %messages) {
                 print " - " . $messages{$vhost}{$fromip}{$ruleid} . " time(s)\n";
             }
         }
-
    }
 }
 
@@ -230,4 +217,4 @@ if (keys %topips) {
    print "\n";
 }
 
-exit(0)
+exit(0);
