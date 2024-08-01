@@ -1,3 +1,6 @@
+08.01.2024 - Nick Hall
+- Updated to function with mod_security 3
+
 11.01.2013 - Torben Hansen <derhansen@gmail.com>
 - Fixed problem with entries, which do not contain a message or rule id #8
 
