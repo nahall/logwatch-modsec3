@@ -1,10 +1,10 @@
-Logwatch configuration for ModSecurity 2 audit logfiles
+Logwatch configuration for ModSecurity 3 audit logfiles
 =
 
 What does it do?
 -
 
-This is a logwatch filter for ModSecurity 2 audit logfiles. It collects events from
+This is a logwatch filter for ModSecurity 3 audit logfiles. It collects events from
 the audit log when an logentry contains:
 
 * A hostname - e.g. www.site.tld
@@ -13,14 +13,14 @@ the audit log when an logentry contains:
 The filter creates a summary combined report for each virtual host and the attacks blocked.
 It also displays the top 10 blocked IP addresses in the summary report.
 
-It can help you analyzing your ModSecurity 2 audit logs to find blocked attacks or to find
+It can help you analyzing your ModSecurity 3 audit logs to find blocked attacks or to find
 false/positives.
 
 
 Example output
 -
 <pre>
---------------------- ModSecurity2 (mod_security2) Begin ------------------------
+--------------------- ModSecurity3 (mod_security3) Begin ------------------------
 
 ATTACKS BLOCKED ON VHOSTS:
 
@@ -43,24 +43,23 @@ xxx.xxx.xx.xx - 1 time(s)
 xxx.xxx.xxx.xx - 1 time(s)
 xxx.xxx.xxx.xxx - 1 time(s)
 
----------------------- ModSecurity2 (mod_security2) End -------------------------
+---------------------- ModSecurity3 (mod_security3) End -------------------------
 </pre>
 
 Compatibility
 -
 
-The filter has been tested with ModSecurity 2 version 2.7.4 and the OWASP ModSecurity Core Rule Set (CRS)
-It also works with ModSecurity 2 version 2.6
+The filter has been tested with ModSecurity 3 version 3.0.12 and the OWASP ModSecurity Core Rule Set (CRS) version 3.3.5
 
 
 Installation
 -
 
-1. Copy 'conf/logfiles/audit_log.conf' to '/etc/logwatch/conf/logfiles'
-2. Copy 'conf/services/mod_security2.conf' to '/etc/logwatch/conf/services'
-3. Copy 'scripts/services/mod_security2' to '/etc/logwatch/scripts/services'
+1. Copy 'conf/logfiles/modsec_audit_log.conf' to '/etc/logwatch/conf/logfiles'
+2. Copy 'conf/services/mod_security3.conf' to '/etc/logwatch/conf/services'
+3. Copy 'scripts/services/mod_security3' to '/etc/logwatch/scripts/services'
 
-Adjust the settigns for the logfile to match the location of your mod_security2 logfiles.
+Adjust the settigns for the logfile to match the location of your mod_security3 logfiles.
 
 
 Usage
@@ -68,11 +67,11 @@ Usage
 
 Display logfile entries (default output)
 
-~# logwatch --service mod_security2
+~# logwatch --service mod_security3
 
 Display logfile entries for a given date (or date range)
 
-~# logwatch --service mod_security2  --range 10/Dec/2012
+~# logwatch --service mod_security3  --range 10/Dec/2012
 
 
 Feedback / Improvements
